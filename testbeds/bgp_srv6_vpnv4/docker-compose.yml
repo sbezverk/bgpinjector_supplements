@@ -1,0 +1,205 @@
+# Shared proxy settings for processes running inside the testbed containers.
+# Docker image pulls use the Docker daemon's proxy configuration separately.
+# Override HTTP_PROXY, HTTPS_PROXY, or NO_PROXY in the shell when necessary.
+x-proxy-environment: &proxy-environment
+  HTTP_PROXY: ${HTTP_PROXY:-http://proxy.esl.cisco.com:8080}
+  HTTPS_PROXY: ${HTTPS_PROXY:-http://proxy.esl.cisco.com:8080}
+  http_proxy: ${HTTP_PROXY:-http://proxy.esl.cisco.com:8080}
+  https_proxy: ${HTTPS_PROXY:-http://proxy.esl.cisco.com:8080}
+  # Always append the lab exclusions even when the host already defines
+  # NO_PROXY, so a corporate shell setting cannot accidentally proxy BGP/BMP
+  # testbed control traffic.
+  NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,::1},localhost,127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,172.30.0.0/24,172.31.0.0/24,192.168.0.0/16,fc04:b400::/32,fd04:b400::/32,fe80::/10,host.docker.internal,xrd-host-prep,xrd-srv6-vpnv4-host-prep,xrd,xrd-srv6-vpnv4,bgpinjector,gobmp
+  no_proxy: ${NO_PROXY:-localhost,127.0.0.1,::1},localhost,127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,172.30.0.0/24,172.31.0.0/24,192.168.0.0/16,fc04:b400::/32,fd04:b400::/32,fe80::/10,host.docker.internal,xrd-host-prep,xrd-srv6-vpnv4-host-prep,xrd,xrd-srv6-vpnv4,bgpinjector,gobmp
+
+networks:
+  # XRd needs a dedicated management interface. The interface prefix makes
+  # this network appear inside XRd as xr-10, matching XR_MGMT_INTERFACES.
+  xrd-mgmt:
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-1
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+
+  # Shared data network for the BGP session and the XRd-to-GoBMP BMP session.
+  # Inside XRd this network is xr-20 and maps to GigabitEthernet0/0/0/0.
+  bgp-srv6-vpnv4:
+    enable_ipv6: true
+    driver_opts:
+      com.docker.network.container_iface_prefix: xr-2
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+        # IPv6 transit network between the RR emulator and XRd. The production
+        # BGP endpoint addresses remain /128 loopbacks and are routed over this
+        # link.
+        - subnet: fd04:b400:ffff::/64
+
+services:
+  # XRd requires host-level kernel settings. These cannot all be applied with
+  # a service-level sysctls block because several are not network-namespace
+  # scoped. This privileged one-shot service updates the Docker host and must
+  # complete successfully before the XRd container is allowed to start.
+  xrd-host-prep:
+    image: alpine:3.20
+    container_name: xrd-srv6-vpnv4-host-prep
+    environment: *proxy-environment
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        if [ ! -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
+          if command -v modprobe >/dev/null 2>&1; then
+            modprobe br_netfilter || true
+          fi
+        fi
+        if [ ! -e /proc/sys/net/bridge/bridge-nf-call-iptables ]; then
+          echo "ERROR: /proc/sys/net/bridge/bridge-nf-call-iptables is missing; load br_netfilter on the Docker host" >&2
+          exit 1
+        fi
+        sysctl -w net.bridge.bridge-nf-call-iptables=0
+        sysctl -w net.bridge.bridge-nf-call-ip6tables=0
+        sysctl -w net.ipv6.conf.all.disable_ipv6=0
+        sysctl -w net.ipv6.conf.default.disable_ipv6=0
+        sysctl -w fs.inotify.max_user_instances=65536
+        sysctl -w fs.inotify.max_user_watches=65536
+        sysctl -w net.ipv4.udp_mem='1124736 10000000 67108864'
+        sysctl -w net.core.netdev_max_backlog=300000
+        sysctl -w net.core.optmem_max=67108864
+        sysctl -w net.core.rmem_max=67108864
+        sysctl -w net.core.rmem_default=67108864
+        sysctl -w net.core.wmem_max=67108864
+        sysctl -w net.core.wmem_default=67108864
+    network_mode: host
+    pid: host
+    privileged: true
+    restart: "no"
+    volumes:
+      - type: bind
+        source: /lib/modules
+        target: /lib/modules
+        read_only: true
+
+  gobmp:
+    image: docker.io/sbezverk/gobmp:latest
+    environment: *proxy-environment
+    command:
+      - "--source-port=5000"
+      - "--dump=file"
+      - "--msg-file=/output/gobmp.jsonl"
+      # GoBMP uses the glog-style lowercase verbosity flag.
+      - "--v=9"
+    volumes:
+      - ./output:/output
+    networks:
+      bgp-srv6-vpnv4:
+        ipv4_address: 172.30.0.4
+    restart: unless-stopped
+
+  xrd:
+    image: ${XR_IMAGE:-sbezverk/xrd-control-plane:26.2.1}
+    container_name: xrd-srv6-vpnv4
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FSETID
+      - FOWNER
+      - MKNOD
+      - NET_RAW
+      - SETGID
+      - SETUID
+      - SETFCAP
+      - SETPCAP
+      - NET_BIND_SERVICE
+      - SYS_CHROOT
+      - KILL
+      - AUDIT_WRITE
+      - SYS_NICE
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - NET_ADMIN
+      - SYS_PTRACE
+      - IPC_LOCK
+    cap_drop:
+      - ALL
+    devices:
+      - /dev/fuse
+      - /dev/net/tun
+    environment:
+      <<: *proxy-environment
+      XR_EVERY_BOOT_CONFIG: /etc/xrd/startup.cfg
+      XR_INTERFACES: linux:xr-20,xr_name=Gi0/0/0/0,chksum
+      XR_MGMT_INTERFACES: linux:xr-10,xr_name=Mg0/RP0/CPU0/0,chksum
+    networks:
+      xrd-mgmt:
+        ipv4_address: 172.31.0.2
+      bgp-srv6-vpnv4:
+        ipv4_address: 172.30.0.2
+        ipv6_address: fd04:b400:ffff::107
+    pids_limit: -1
+    security_opt:
+      - apparmor=unconfined
+      - label=disable
+    stdin_open: true
+    tty: true
+    volumes:
+      - type: bind
+        source: ./xrd_xrconf.cfg
+        target: /etc/xrd/startup.cfg
+      - xrd-srv6-vpnv4:/xr-storage/
+    depends_on:
+      xrd-host-prep:
+        condition: service_completed_successfully
+        required: true
+      gobmp:
+        condition: service_started
+        required: true
+
+  bgpinjector:
+    image: docker.io/sbezverk/bgpinjector:srv6_vpnv4
+    cap_add:
+      - NET_ADMIN
+    environment: *proxy-environment
+    # Install the RR loopback and route in the container network namespace.
+    # The explicit local-address argument below selects it as the TCP source.
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        ip -6 address replace fd04:b400::706/128 dev lo
+        ip -6 route replace fd04:b400::107/128 via fd04:b400:ffff::107
+        exec /bgpinjector "$$@"
+      - bgpinjector-entrypoint
+    command:
+      - "-api-address=0.0.0.0:8080"
+      - "-speaker-address=[fd04:b400::107]:179"
+      - "-local-address=fd04:b400::706"
+      # bgpinjector represents the route reflector from the captured topology.
+      - "-router-id=10.65.1.66"
+      - "-local-as=26727"
+      - "-hold-time=30"
+      - "-retry-interval=1s"
+      - "-next-hop-mode=preserve"
+      - "-add-path-send-families=vpnv4"
+      # RFC 8950 support is advertised automatically for locally enabled
+      # VPNv4. IPv6 next hops are accepted only when the peer negotiates it.
+      - "-rate=1"
+      - "-ingress-type=none"
+    depends_on:
+      # The injector has its own reconnect loop. It must make the readiness
+      # connection itself so XR sees the configured RR source fd04:b400::706.
+      xrd:
+        condition: service_started
+        required: true
+    ports:
+      - "${BGPINJECTOR_API_PORT:-18080}:8080"
+    networks:
+      bgp-srv6-vpnv4:
+        ipv4_address: 172.30.0.3
+        ipv6_address: fd04:b400:ffff::706
+    restart: unless-stopped
+
+volumes:
+  xrd-srv6-vpnv4:
+    name: xrd-srv6-vpnv4

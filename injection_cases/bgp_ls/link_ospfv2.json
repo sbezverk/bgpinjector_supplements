@@ -1,0 +1,32 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "ospf",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "link",
+      "local_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {"kind": "ospf-router-id", "value": "10.0.0.1"}
+      },
+      "remote_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {"kind": "ospf-router-id", "value": "10.0.0.2"}
+      },
+      "link_descriptors": {
+        "ipv4_interface_address": "192.0.2.1",
+        "ipv4_neighbor_address": "192.0.2.2"
+      }
+    },
+    "attributes": {
+      "te_default_metric": 20,
+      "maximum_link_bandwidth": 1000000000
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

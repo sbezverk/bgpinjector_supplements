@@ -1,0 +1,31 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "isis-level-2",
+    "instance_id": "7",
+    "link_state": {
+      "kind": "ipv6_topology_prefix",
+      "local_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {"kind": "isis-system-id", "value": "0000.0000.0002"}
+      },
+      "prefix": "2001:db8:200::/48",
+      "prefix_descriptors": {"multi_topology_id": 7}
+    },
+    "attributes": {
+      "prefix_metric": 100,
+      "source_router_identifiers": ["2001:db8::2"],
+      "ranges": [
+        {
+          "range_size": 64,
+          "prefix_sids": [{"flags": 12, "algorithm": 0, "value": 24000, "is_label": true}]
+        }
+      ],
+      "flexible_algorithm_metrics": [{"algorithm": 128, "metric": 85}]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

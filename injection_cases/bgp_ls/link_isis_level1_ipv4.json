@@ -1,0 +1,29 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "isis-level-1",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "link",
+      "local_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {"kind": "isis-system-id", "value": "0000.0000.0001"}
+      },
+      "remote_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {"kind": "isis-system-id", "value": "0000.0000.0002"}
+      },
+      "link_descriptors": {
+        "ipv4_interface_address": "192.0.2.1",
+        "ipv4_neighbor_address": "192.0.2.2"
+      }
+    },
+    "attributes": {
+      "te_default_metric": 15
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

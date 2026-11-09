@@ -1,0 +1,51 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "ospfv3",
+    "instance_id": "1",
+    "link_state": {
+      "kind": "link",
+      "local_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {"kind": "ospfv3-router-id", "value": "10.0.0.1"}
+      },
+      "remote_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {"kind": "ospfv3-router-id", "value": "10.0.0.2"}
+      },
+      "link_descriptors": {
+        "ipv6_interface_address": "2001:db8:23::1",
+        "ipv6_neighbor_address": "2001:db8:23::2"
+      }
+    },
+    "attributes": {
+      "unidirectional_link_delay": 1200,
+      "min_max_unidirectional_delay": {"minimum": 1100, "maximum": 1500},
+      "srv6_end_x_sids": [
+        {
+          "endpoint_behavior": 5,
+          "weight": 10,
+          "sid": "2001:db8:100::1",
+          "sid_structure": {
+            "locator_block_length": 32,
+            "locator_node_length": 16,
+            "function_length": 16,
+            "argument_length": 0
+          }
+        }
+      ],
+      "application_specific_attributes": [
+        {
+          "standard_application_mask": [0, 0, 0, 1],
+          "attributes": [{"type": 1088, "value_hex": "00000064"}]
+        }
+      ]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

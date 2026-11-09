@@ -1,0 +1,1 @@
+90dfacbf17406c750b6d1efee348b8a023ab7fd0a1af02af533614ec8e906eff  testdata/injection_cases/gobmp/bgp_ls/link_isis_attributes.json

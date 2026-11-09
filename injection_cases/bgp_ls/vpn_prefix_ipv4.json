@@ -1,0 +1,23 @@
+{
+  "address_family": "bgp-ls-vpn",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "isis-level-2",
+    "instance_id": "0",
+    "rd": "65000:200",
+    "link_state": {
+      "kind": "ipv4_topology_prefix",
+      "local_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {"kind": "isis-system-id", "value": "0000.0000.0002"}
+      },
+      "prefix": "198.51.100.0/24"
+    },
+    "attributes": {
+      "prefix_metric": 40,
+      "igp_extended_route_tags": [300, 400]
+    }
+  },
+  "origin": "igp"
+}

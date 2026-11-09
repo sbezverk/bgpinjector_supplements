@@ -1,0 +1,31 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "isis-level-2",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "node",
+      "local_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {
+          "kind": "isis-system-id",
+          "value": "0000.0000.0004"
+        }
+      }
+    },
+    "attributes": {
+      "node_name": "sr-local-block-router.example.net",
+      "sr_local_blocks": [
+        {
+          "ranges": [
+            {"range_size": 8000, "sid_label": 15000}
+          ]
+        }
+      ]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

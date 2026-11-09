@@ -1,0 +1,51 @@
+# RouterCommander inventory for the BGP-LS XRd Docker testbed.
+#
+# The SSH ports are the host-published Compose ports on the remote Docker
+# server. The password is not stored here; run routercommander with
+# --password-stdin.
+routers:
+  pe1:
+    address: 10.225.253.186
+    port: 2221
+    platform: iosxr
+    username: cisco
+  p1:
+    address: 10.225.253.186
+    port: 2222
+    platform: iosxr
+    username: cisco
+  p2:
+    address: 10.225.253.186
+    port: 2223
+    platform: iosxr
+    username: cisco
+  pe2:
+    address: 10.225.253.186
+    port: 2224
+    platform: iosxr
+    username: cisco
+  asbr1:
+    address: 10.225.253.186
+    port: 2225
+    platform: iosxr
+    username: cisco
+  rr1:
+    address: 10.225.253.186
+    port: 2226
+    platform: iosxr
+    username: cisco
+  ext1:
+    address: 10.225.253.186
+    port: 2227
+    platform: iosxr
+    username: cisco
+  ce1:
+    address: 10.225.253.186
+    port: 2228
+    platform: iosxr
+    username: cisco
+  ce2:
+    address: 10.225.253.186
+    port: 2229
+    platform: iosxr
+    username: cisco

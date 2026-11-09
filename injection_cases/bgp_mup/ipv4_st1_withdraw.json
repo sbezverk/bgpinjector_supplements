@@ -1,0 +1,23 @@
+{
+  "address_family": "ipv4/bgp-mup",
+  "action": "withdraw",
+  "nlri": {
+    "arch_type": 1,
+    "route_type": 3,
+    "route_data": {
+      "rd": [0, 0, 0, 100, 0, 0, 0, 100],
+      "prefix_length": 32,
+      "prefix": [192, 0, 2, 1],
+      "teid": [0, 0, 48, 57],
+      "qfi": 9,
+      "end_point_address_length": 32,
+      "end_point_address": "10.0.0.1",
+      "source_address_length": 32,
+      "source_address": "10.0.0.3",
+      "tlvs": []
+    }
+  },
+  "extended_communities": [
+    { "type": "route_target", "format": "ipv4", "ipv4": "192.0.2.253", "local": 100 }
+  ]
+}

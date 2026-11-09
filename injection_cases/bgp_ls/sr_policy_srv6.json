@@ -1,0 +1,49 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "segment-routing",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "sr_policy_candidate_path",
+      "local_node": {
+        "autonomous_system": 65000,
+        "bgp_router_id": "192.0.2.1",
+        "ipv4_router_id_local": "192.0.2.1"
+      },
+      "candidate_path": {
+        "protocol_origin": 1,
+        "flags": 192,
+        "endpoint": "2001:db8:ffff::9",
+        "color": 200,
+        "originator_as": 65000,
+        "originator_address": "2001:db8:ffff::1",
+        "discriminator": 2001
+      }
+    },
+    "attributes": {
+      "policy_name": "green-srv6-policy",
+      "candidate_path_state": {"priority": 50, "flags": 0, "preference": 150},
+      "srv6_binding_sids": [
+        {
+          "flags": 32768,
+          "sid": "2001:db8:100::100"
+        }
+      ],
+      "segment_lists": [
+        {
+          "flags": 61440,
+          "weight": 100,
+          "segments": [
+            {"type": 9, "flags": 57344, "value": "2001:db8:200::1", "value_hex": "20010db8020000000000000000000001"},
+            {"type": 9, "flags": 57344, "value": "2001:db8:300::1", "value_hex": "20010db8030000000000000000000001"}
+          ],
+          "identifier": 7
+        }
+      ]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

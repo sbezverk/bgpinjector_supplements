@@ -1,0 +1,23 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "isis-level-2",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "node",
+      "local_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {"kind": "isis-system-id", "value": "0000.0000.0003"}
+      }
+    },
+    "attributes": {
+      "node_name": "srv6-isis-router.example.net",
+      "node_flags": {"router": true, "v6": true},
+      "srv6_capabilities": {"flags": 1}
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

@@ -1,0 +1,29 @@
+{
+  "address_family": "ipv4/bgp-mup",
+  "action": "announce",
+  "nlri": {
+    "arch_type": 1,
+    "route_type": 2,
+    "route_data": {
+      "rd": [0, 0, 0, 100, 0, 0, 0, 100],
+      "address": [10, 0, 0, 1]
+    }
+  },
+  "next_hops": ["2001:db8::2"],
+  "as_path_segments": [
+    { "type": "as_sequence", "asns": [65000] }
+  ],
+  "origin": "igp",
+  "extended_communities": [
+    { "type": "route_target", "format": "four_octet_as", "asn": 4200000000, "local": 100 },
+    { "type": "raw", "type_high": 12, "type_low": 0, "value_hex": "006400000064" }
+  ],
+  "prefix_sid": {
+    "tlvs": [
+      {
+        "type": 5,
+        "value": [0, 1, 0, 21, 0, 32, 1, 13, 184, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0]
+      }
+    ]
+  }
+}

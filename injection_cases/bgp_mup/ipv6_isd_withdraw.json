@@ -1,0 +1,17 @@
+{
+  "address_family": "ipv6/bgp-mup",
+  "action": "withdraw",
+  "nlri": {
+    "arch_type": 1,
+    "route_type": 1,
+    "route_data": {
+      "rd": [0, 0, 0, 100, 0, 0, 0, 100],
+      "prefix_length": 64,
+      "prefix": [32, 1, 13, 184, 0, 1, 0, 0]
+    }
+  },
+  "extended_communities": [
+    { "type": "route_target", "format": "ipv4", "ipv4": "192.0.2.254", "local": 100 },
+    { "type": "raw", "type_high": 12, "type_low": 4, "value_hex": "c00002010064" }
+  ]
+}

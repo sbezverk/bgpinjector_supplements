@@ -1,0 +1,25 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "ospfv3",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "node",
+      "local_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {"kind": "ospfv3-router-id", "value": "10.0.0.4"}
+      }
+    },
+    "attributes": {
+      "node_name": "srv6-ospfv3-router.example.net",
+      "node_flags": {"router": true, "v6": true},
+      "srv6_capabilities": {"flags": 1},
+      "msds": [{"type": 1, "value": 10}]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

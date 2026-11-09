@@ -1,0 +1,72 @@
+{
+  "address_family": "vpnv4",
+  "action": "announce",
+  "path_id": 1,
+  "nlri": {
+    "labels": [
+      {
+        "value": 917568,
+        "exp": 0,
+        "is_bos": true
+      }
+    ],
+    "rd": "10.65.1.5:6",
+    "prefix": "66.38.57.36/32"
+  },
+  "next_hops": [
+    "fd04:b400::108"
+  ],
+  "origin": "igp",
+  "local_pref": 100,
+  "prefix_sid": {
+    "tlvs": [
+      {
+        "type": 5,
+        "srv6_service": {
+          "sub_tlvs": [
+            {
+              "type": 1,
+              "sid_information": {
+                "sid": "fc04:b400:108::",
+                "endpoint_behavior": 63,
+                "sub_sub_tlvs": [
+                  {
+                    "type": 1,
+                    "sid_structure": {
+                      "locator_block_length": 32,
+                      "locator_node_length": 16,
+                      "function_length": 16,
+                      "argument_length": 0,
+                      "transposition_length": 16,
+                      "transposition_offset": 48
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "extended_communities": [
+    {
+      "type": "site_of_origin",
+      "format": "ipv4",
+      "ipv4": "10.25.1.131",
+      "local": 11002
+    },
+    {
+      "type": "route_target",
+      "format": "two_octet_as",
+      "asn": 26727,
+      "local": 30022
+    },
+    {
+      "type": "route_target",
+      "format": "two_octet_as",
+      "asn": 26727,
+      "local": 39500
+    }
+  ]
+}

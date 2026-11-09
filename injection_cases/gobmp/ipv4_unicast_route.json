@@ -1,0 +1,12 @@
+{
+  "address_family": "ipv4/unicast",
+  "action": "announce",
+  "nlri": {
+    "prefix": "198.51.100.254/32"
+  },
+  "next_hops": [
+    "192.0.2.2"
+  ],
+  "origin": "igp",
+  "local_pref": 100
+}

@@ -1,0 +1,27 @@
+{
+  "address_family": "ipv6/bgp-mup",
+  "action": "announce",
+  "nlri": {
+    "arch_type": 1,
+    "route_type": 3,
+    "route_data": {
+      "rd": [0, 0, 0, 100, 0, 0, 0, 100],
+      "prefix_length": 128,
+      "prefix": [32, 1, 13, 184, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+      "teid": [0, 0, 48, 57],
+      "qfi": 9,
+      "end_point_address_length": 128,
+      "end_point_address": "2001:db8::1",
+      "source_address_length": 0,
+      "tlvs": []
+    }
+  },
+  "next_hops": ["2001:db8::2"],
+  "as_path_segments": [
+    { "type": "as_sequence", "asns": [65000] }
+  ],
+  "origin": "igp",
+  "extended_communities": [
+    { "type": "route_target", "format": "four_octet_as", "asn": 4200000000, "local": 100 }
+  ]
+}

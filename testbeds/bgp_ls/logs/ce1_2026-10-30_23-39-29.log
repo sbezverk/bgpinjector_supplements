@@ -1,0 +1,110 @@
+=========> terminal w 256
+
+Fri Oct 30 14:42:06.172 UTC
+
+
+=========> terminal l 0
+
+Fri Oct 30 14:42:06.968 UTC
+
+
+=========> show platform
+
+Fri Oct 30 14:42:08.209 UTC
+Node              Type                     State                    Config state
+--------------------------------------------------------------------------------
+0/RP0/CPU0        XRd-CP-C-01(Active)      IOS XR RUN               NSHUT
+
+
+=========> show running formal
+
+Fri Oct 30 14:42:08.808 UTC
+!! Building configuration...
+!! IOS XR Configuration 26.2.1
+!! Last configuration change at Fri Oct 30 14:40:00 2026 by cisco
+!
+hostname CE1
+username cisco 
+username cisco group root-lr
+username cisco group cisco-support
+username cisco secret 10 $6$qgtrX1PyxsTDCX1.$CYrrzPeaDo6YP.4fRZHKIt8pd2XF1W/UIfsgTtxvfQXZ26yheK9OXnXEx61AUSqIGN8PjXSRpXzxgph6BGqnD.
+vrf A 
+vrf A address-family ipv4 unicast 
+vrf A address-family ipv6 unicast 
+vrf B 
+vrf B address-family ipv4 unicast 
+vrf B address-family ipv6 unicast 
+interface Loopback100 
+interface Loopback100 description CUST-A test loopback
+interface Loopback100 vrf A
+interface Loopback100 ipv4 address 10.11.0.1 255.255.255.255
+interface Loopback100 ipv6 address fd00:11:ff::1/128
+interface Loopback101 
+interface Loopback101 description CUST-A extra prefix test
+interface Loopback101 vrf A
+interface Loopback101 ipv4 address 10.11.1.1 255.255.255.0
+interface Loopback200 
+interface Loopback200 description CUST-B overlapping test loopback
+interface Loopback200 vrf B
+interface Loopback200 ipv4 address 10.11.0.1 255.255.255.255
+interface Loopback200 ipv6 address fd00:11:ff::1/128
+interface Loopback201 
+interface Loopback201 description CUST-B overlapping extra prefix test
+interface Loopback201 vrf B
+interface Loopback201 ipv4 address 10.11.1.1 255.255.255.0
+interface MgmtEth0/RP0/CPU0/0 ipv4 address 172.20.0.18 255.255.255.0
+interface MgmtEth0/RP0/CPU0/0 ipv6 address fd04:b400:20::18/64
+interface GigabitEthernet0/0/0/0 description PE1 --- GigabitEthernet0/0/0/1 (802.1Q trunk L10)
+interface GigabitEthernet0/0/0/0.100 
+interface GigabitEthernet0/0/0/0.100 description PE1 --- GigabitEthernet0/0/0/1.100 (VRF CUST-A)
+interface GigabitEthernet0/0/0/0.100 vrf A
+interface GigabitEthernet0/0/0/0.100 ipv4 address 192.168.11.2 255.255.255.252
+interface GigabitEthernet0/0/0/0.100 ipv6 address fd00:11::2/64
+interface GigabitEthernet0/0/0/0.100 encapsulation dot1q 100
+interface GigabitEthernet0/0/0/0.200 
+interface GigabitEthernet0/0/0/0.200 description PE1 --- GigabitEthernet0/0/0/1.200 (VRF CUST-B)
+interface GigabitEthernet0/0/0/0.200 vrf B
+interface GigabitEthernet0/0/0/0.200 ipv4 address 192.168.11.2 255.255.255.252
+interface GigabitEthernet0/0/0/0.200 ipv6 address fd00:11::2/64
+interface GigabitEthernet0/0/0/0.200 encapsulation dot1q 200
+router static address-family ipv4 unicast 0.0.0.0/0 MgmtEth0/RP0/CPU0/0 172.20.0.1
+router static address-family ipv6 unicast ::/0 MgmtEth0/RP0/CPU0/0 fd04:b400:20::1
+router ospf CE vrf A 
+router ospf CE vrf A router-id 10.11.0.1
+router ospf CE vrf A area 0 
+router ospf CE vrf A area 0 interface Loopback100 
+router ospf CE vrf A area 0 interface Loopback100 passive enable
+router ospf CE vrf A area 0 interface Loopback101 
+router ospf CE vrf A area 0 interface Loopback101 passive enable
+router ospf CE vrf A area 0 interface GigabitEthernet0/0/0/0.100 
+router ospf CE vrf A area 0 interface GigabitEthernet0/0/0/0.100 network point-to-point
+router ospf CE vrf B 
+router ospf CE vrf B router-id 10.11.0.1
+router ospf CE vrf B area 0 
+router ospf CE vrf B area 0 interface Loopback200 
+router ospf CE vrf B area 0 interface Loopback200 passive enable
+router ospf CE vrf B area 0 interface Loopback201 
+router ospf CE vrf B area 0 interface Loopback201 passive enable
+router ospf CE vrf B area 0 interface GigabitEthernet0/0/0/0.200 
+router ospf CE vrf B area 0 interface GigabitEthernet0/0/0/0.200 network point-to-point
+router ospf CE 
+router ospfv3 CE6 vrf A 
+router ospfv3 CE6 vrf A router-id 10.11.0.1
+router ospfv3 CE6 vrf A area 0 
+router ospfv3 CE6 vrf A area 0 interface Loopback100 
+router ospfv3 CE6 vrf A area 0 interface GigabitEthernet0/0/0/0.100 
+router ospfv3 CE6 vrf A area 0 interface GigabitEthernet0/0/0/0.100 network point-to-point
+router ospfv3 CE6 vrf B 
+router ospfv3 CE6 vrf B router-id 10.11.0.1
+router ospfv3 CE6 vrf B area 0 
+router ospfv3 CE6 vrf B area 0 interface Loopback200 
+router ospfv3 CE6 vrf B area 0 interface GigabitEthernet0/0/0/0.200 
+router ospfv3 CE6 vrf B area 0 interface GigabitEthernet0/0/0/0.200 network point-to-point
+router ospfv3 CE6 
+ssh server rate-limit 600
+ssh server v2
+ssh server vrf default
+end
+
+
+

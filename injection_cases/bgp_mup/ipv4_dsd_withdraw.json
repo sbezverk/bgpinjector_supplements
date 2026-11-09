@@ -1,0 +1,16 @@
+{
+  "address_family": "ipv4/bgp-mup",
+  "action": "withdraw",
+  "nlri": {
+    "arch_type": 1,
+    "route_type": 2,
+    "route_data": {
+      "rd": [0, 0, 0, 100, 0, 0, 0, 100],
+      "address": [10, 0, 0, 1]
+    }
+  },
+  "extended_communities": [
+    { "type": "route_target", "format": "four_octet_as", "asn": 4200000000, "local": 100 },
+    { "type": "raw", "type_high": 12, "type_low": 0, "value_hex": "006400000064" }
+  ]
+}

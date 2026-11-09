@@ -1,0 +1,39 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "isis-level-2",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "node",
+      "local_node": {
+        "autonomous_system": 65000,
+        "igp_router_id": {
+          "kind": "isis-system-id",
+          "value": "0000.0000.0001"
+        }
+      }
+    },
+    "attributes": {
+      "node_name": "pe1.example.net",
+      "node_flags": {
+        "router": true,
+        "v6": true
+      },
+      "isis_area_identifiers": ["49.0001"],
+      "sr_algorithms": [0, 1],
+      "sr_capabilities": {
+        "ranges": [
+          {"range_size": 8000, "sid_label": 16000}
+        ]
+      },
+      "msds": [
+        {"type": 1, "value": 10},
+        {"type": 2, "value": 8}
+      ]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

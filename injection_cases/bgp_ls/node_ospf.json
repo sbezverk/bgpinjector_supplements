@@ -1,0 +1,32 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "ospf",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "node",
+      "local_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {
+          "kind": "ospf-router-id",
+          "value": "10.0.0.1"
+        }
+      }
+    },
+    "attributes": {
+      "node_flags": {
+        "abr": true,
+        "router": true
+      },
+      "ipv4_router_ids": ["10.0.0.1"],
+      "unknown_tlvs": [
+        {"type": 65000, "value_hex": "01020304"}
+      ]
+    }
+  },
+  "origin": "igp",
+  "local_pref": 100
+}

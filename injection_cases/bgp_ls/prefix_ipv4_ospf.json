@@ -1,0 +1,27 @@
+{
+  "address_family": "bgp-ls",
+  "action": "announce",
+  "next_hops": ["fd00:100::2"],
+  "nlri": {
+    "protocol_id": "ospf",
+    "instance_id": "0",
+    "link_state": {
+      "kind": "ipv4_topology_prefix",
+      "local_node": {
+        "autonomous_system": 65000,
+        "ospf_area_id": 0,
+        "igp_router_id": {"kind": "ospf-router-id", "value": "10.0.0.1"}
+      },
+      "prefix": "203.0.113.0/25",
+      "prefix_descriptors": {"ospf_route_type": 3}
+    },
+    "attributes": {
+      "prefix_metric": 50,
+      "ospf_forwarding_address": "192.0.2.254",
+      "opaque_attributes": ["00010004deadbeef"]
+    }
+  },
+  "origin": "igp",
+  "med": 50,
+  "local_pref": 100
+}

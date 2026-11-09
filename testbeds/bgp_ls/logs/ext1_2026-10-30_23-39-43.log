@@ -1,0 +1,67 @@
+=========> terminal w 256
+
+Fri Oct 30 14:42:20.169 UTC
+
+
+=========> terminal l 0
+
+Fri Oct 30 14:42:21.076 UTC
+
+
+=========> show platform
+
+Fri Oct 30 14:42:21.614 UTC
+Node              Type                     State                    Config state
+--------------------------------------------------------------------------------
+0/RP0/CPU0        XRd-CP-C-01(Active)      IOS XR RUN               NSHUT
+
+
+=========> show running formal
+
+Fri Oct 30 14:42:23.064 UTC
+!! Building configuration...
+!! IOS XR Configuration 26.2.1
+!! Last configuration change at Fri Oct 30 14:38:26 2026 by cisco
+!
+hostname EXT1
+username cisco 
+username cisco group root-lr
+username cisco group cisco-support
+username cisco secret 10 $6$pDguv01fyiej9v0.$byOGwqRiYY0R.VrzTIWlyumAJcAIA2ACP1pikk/kstddgHXbAFAbneUzMvaTd6TLJwS.VF.jaIDwNjZlEfUFb1
+interface Loopback0 
+interface Loopback0 ipv4 address 10.0.0.7 255.255.255.255
+interface Loopback0 ipv6 address fd00::7/128
+interface MgmtEth0/RP0/CPU0/0 ipv4 address 172.20.0.17 255.255.255.0
+interface MgmtEth0/RP0/CPU0/0 ipv6 address fd04:b400:20::17/64
+interface GigabitEthernet0/0/0/0 description ASBR1 --- GigabitEthernet0/0/0/2 (L7 eBGP)
+interface GigabitEthernet0/0/0/0 ipv4 address 172.16.57.2 255.255.255.252
+interface GigabitEthernet0/0/0/0 ipv6 address fd00:172:57::2/64
+route-policy PASS
+  pass
+end-policy
+!
+router static address-family ipv4 unicast 0.0.0.0/0 MgmtEth0/RP0/CPU0/0 172.20.0.1
+router static address-family ipv6 unicast ::/0 MgmtEth0/RP0/CPU0/0 fd04:b400:20::1
+router bgp 65001 
+router bgp 65001 bgp router-id 10.0.0.7
+router bgp 65001 address-family ipv4 unicast 
+router bgp 65001 address-family ipv4 unicast network 10.0.0.7/32
+router bgp 65001 address-family ipv6 unicast 
+router bgp 65001 address-family ipv6 unicast network fd00::7/128
+router bgp 65001 neighbor 172.16.57.1 
+router bgp 65001 neighbor 172.16.57.1 remote-as 65000
+router bgp 65001 neighbor 172.16.57.1 address-family ipv4 unicast 
+router bgp 65001 neighbor 172.16.57.1 address-family ipv4 unicast route-policy PASS in
+router bgp 65001 neighbor 172.16.57.1 address-family ipv4 unicast route-policy PASS out
+router bgp 65001 neighbor fd00:172:57::1 
+router bgp 65001 neighbor fd00:172:57::1 remote-as 65000
+router bgp 65001 neighbor fd00:172:57::1 address-family ipv6 unicast 
+router bgp 65001 neighbor fd00:172:57::1 address-family ipv6 unicast route-policy PASS in
+router bgp 65001 neighbor fd00:172:57::1 address-family ipv6 unicast route-policy PASS out
+ssh server rate-limit 600
+ssh server v2
+ssh server vrf default
+end
+
+
+

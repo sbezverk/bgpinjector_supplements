@@ -1,0 +1,57 @@
+services:
+  gobmp:
+    image: docker.io/sbezverk/gobmp:mup_test
+    command:
+      - "--source-port=5000"
+      - "--dump=file"
+      - "--msg-file=/output/gobmp.jsonl"
+      # GoBMP uses the glog-style lowercase verbosity flag.
+      - "--v=9"
+    volumes:
+      - ./output:/output
+    networks:
+      bgp-mup:
+        ipv4_address: 172.30.0.4
+    restart: unless-stopped
+
+  gobgp:
+    # v4.8.0 is the current multi-platform GoBGP image release. Override
+    # GOBGP_IMAGE when testing another release or a locally built image.
+    image: ${GOBGP_IMAGE:-docker.io/jauderho/gobgp:v4.8.0}
+    command: ["/usr/local/bin/gobgpd", "-f", "/config/gobgp.toml"]
+    depends_on:
+      - gobmp
+    volumes:
+      - ./gobgp.toml:/config/gobgp.toml:ro
+    networks:
+      bgp-mup:
+        ipv4_address: 172.30.0.2
+    restart: unless-stopped
+
+  bgpinjector:
+    image: docker.io/sbezverk/bgpinjector:mup_test
+    command:
+      - "-api-address=0.0.0.0:8080"
+      - "-speaker-address=172.30.0.2:179"
+      - "-router-id=172.30.0.3"
+      - "-local-as=65000"
+      - "-hold-time=30"
+      - "-retry-interval=1s"
+      - "-next-hop-mode=preserve"
+      - "-rate=1"
+      - "-ingress-type=none"
+    depends_on:
+      - gobgp
+    ports:
+      - "${BGPINJECTOR_API_PORT:-18080}:8080"
+    networks:
+      bgp-mup:
+        ipv4_address: 172.30.0.3
+    restart: unless-stopped
+
+networks:
+  bgp-mup:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
