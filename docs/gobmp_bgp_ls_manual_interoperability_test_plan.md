@@ -84,13 +84,17 @@ Use a readable `RUN_LABEL` with a sequence number for repeated attempts; record
 the UTC start time in the manifest rather than in the directory name.
 
 ```sh
-RUN_CONTEXT="/absolute/path/to/bgp-ls-run.env"
+RUN_CONTEXT_DIR="{path to the existing runtime environmen folder}/run.env"
+RUN_CONTEXT="$RUN_CONTEXT_DIR/bgp-ls-run.env"  
 cat > "$RUN_CONTEXT" <<'EOF'
-FIXTURE_DIR="/path/to/bgpinjector_supplements/injection_cases/gobmp/bgp_ls"
+REPO_DIR="{path to the local bgpinjector supplements repo}"
+RUN_CONTEXT_DIR="{path to the existing runtime environmen folder}/run.env"
+RUN_CONTEXT="$RUN_CONTEXT_DIR/bgp-ls-run.env"
+FIXTURE_DIR="$REPO_DIR/injection_cases/gobmp/bgp_ls"
 FIXTURE_NAME="link_isis_attributes.json"
-LAB_HOST="user@test-server.example.net"
-LAB_DIR="/path/to/bgpinjector_supplements"
-RESULTS_DIR="/path/to/bgp-ls-results"
+LAB_HOST="sbezverk@10.225.253.186"
+LAB_DIR="{path to bgpinjector supplements repo on a server running test bed setup}"
+RESULTS_DIR="$RUN_CONTEXT_DIR/results"
 RUN_LABEL="link-isis-attributes-run-01"
 EOF
 ```
