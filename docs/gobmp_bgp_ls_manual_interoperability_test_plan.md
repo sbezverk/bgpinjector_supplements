@@ -57,8 +57,7 @@ Clone the public supplements repository on the workstation if it is not
 already present:
 
 ```sh
-git clone https://github.com/sbezverk/bgpinjector_supplements.git \
-  /path/to/bgpinjector_supplements
+git clone https://github.com/sbezverk/bgpinjector_supplements.git
 ```
 
 The repository keeps the related materials together:
