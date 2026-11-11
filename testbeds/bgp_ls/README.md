@@ -97,9 +97,9 @@ and CE2 `10.12.1.1/24`, duplicated across their A and B VRFs.
   `sbezverk/xrd-control-plane:26.2.1`; override using `XR_IMAGE`.
 - `/dev/fuse`, `/dev/net/tun`, bridge netfilter support, and enough CPU, memory,
   and disk for nine XRd control planes plus GoBMP and bgpinjector.
-- GoBMP defaults to `docker.io/sbezverk/gobmp:latest`; override with
+- GoBMP defaults to `ghcr.io/sbezverk/gobmp:latest`; override with
   `GOBMP_IMAGE`.
-- bgpinjector defaults to `docker.io/sbezverk/bgpinjector:srv6`; override with
+- bgpinjector defaults to `ghcr.io/sbezverk/bgpinjector:latest`; override with
   `BGPINJECTOR_IMAGE`. The running image may predate normalized BGP-LS support;
   this testbed's address and resource layout is ready for that work, but the
   image must support AFI 16388 before BGP-LS route injection can be exercised.

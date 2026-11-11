@@ -167,7 +167,7 @@ services:
         read_only: true
 
   gobmp:
-    image: ${GOBMP_IMAGE:-docker.io/sbezverk/gobmp:latest}
+    image: ${GOBMP_IMAGE:-ghcr.io/sbezverk/gobmp:latest}
     container_name: bgp-ls-gobmp
     command: ["--source-port=5000", "--dump=file", "--msg-file=/output/gobmp.jsonl", "--v=9"]
     volumes: ["./output:/output"]
@@ -321,7 +321,7 @@ services:
       l11: { interface_name: xr-20 }
 
   bgpinjector:
-    image: ${BGPINJECTOR_IMAGE:-docker.io/sbezverk/bgpinjector:srv6}
+    image: ${BGPINJECTOR_IMAGE:-ghcr.io/sbezverk/bgpinjector:latest}
     container_name: bgp-ls-injector
     cap_add: [NET_ADMIN]
     environment: *proxy-environment

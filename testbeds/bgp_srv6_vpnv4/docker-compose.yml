@@ -82,7 +82,7 @@ services:
         read_only: true
 
   gobmp:
-    image: docker.io/sbezverk/gobmp:latest
+    image: ghcr.io/sbezverk/gobmp:latest
     environment: *proxy-environment
     command:
       - "--source-port=5000"
@@ -157,7 +157,7 @@ services:
         required: true
 
   bgpinjector:
-    image: docker.io/sbezverk/bgpinjector:srv6_vpnv4
+    image: ghcr.io/sbezverk/bgpinjector:latest
     cap_add:
       - NET_ADMIN
     environment: *proxy-environment

@@ -84,11 +84,11 @@ Use a readable `RUN_LABEL` with a sequence number for repeated attempts; record
 the UTC start time in the manifest rather than in the directory name.
 
 ```sh
-RUN_CONTEXT_DIR="{path to the existing runtime environmen folder}/run.env"
-RUN_CONTEXT="$RUN_CONTEXT_DIR/bgp-ls-run.env"  
+RUN_CONTEXT_DIR="{path to the existing runtime environment folder}/run.env"
+RUN_CONTEXT="$RUN_CONTEXT_DIR/bgp-ls-run.env"
 cat > "$RUN_CONTEXT" <<'EOF'
 REPO_DIR="{path to the local bgpinjector supplements repo}"
-RUN_CONTEXT_DIR="{path to the existing runtime environmen folder}/run.env"
+RUN_CONTEXT_DIR="{path to the existing runtime environment folder}/run.env"
 RUN_CONTEXT="$RUN_CONTEXT_DIR/bgp-ls-run.env"
 FIXTURE_DIR="$REPO_DIR/injection_cases/gobmp/bgp_ls"
 FIXTURE_NAME="link_isis_attributes.json"
@@ -109,7 +109,8 @@ In every terminal session, source that same file and derive the fixture and
 run paths:
 
 ```sh
-RUN_CONTEXT="/absolute/path/to/bgp-ls-run.env"
+RUN_CONTEXT_DIR="/absolute/path/to/run.env"
+RUN_CONTEXT="$RUN_CONTEXT_DIR/bgp-ls-run.env"
 source "$RUN_CONTEXT"
 FIXTURE_PATH="$FIXTURE_DIR/$FIXTURE_NAME"
 RUN_DIR="$RESULTS_DIR/$RUN_LABEL"
@@ -181,7 +182,11 @@ substantial memory and CPU:
 
 ```sh
 ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml up -d gobmp bgpinjector" \
-  > "$RUN_DIR/compose-up.txt"
+  > "$RUN_DIR/compose-up.txt" 2>&1
+ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml ps" \
+  > "$RUN_DIR/compose-ps-after.txt" 2>&1
+ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml images" \
+  > "$RUN_DIR/compose-images-after.txt" 2>&1
 ```
 
 Verify the following before injecting:
@@ -251,8 +256,7 @@ manifest.txt                  run label, UTC start/end, operator, versions
 fixture.json                  exact request body used
 http-headers.txt              HTTP status and headers
 http-response.txt             HTTP response body
-xr-before.txt                 session, BMP, and relevant route state before
-xr-after.txt                  received route detail and BMP state after
+xr-after.txt                  received route detail and post-injection BGP/BMP state
 gobmp.log                     GoBMP pre-decode hex dumps and logs
 gobmp-all.jsonl               GoBMP decoded output snapshot
 bmp-route-mirror.pcap         optional BMP TCP capture, including mirrored PDU
@@ -272,29 +276,37 @@ GoBMP mid-run unless the restart itself is being tested.
 
 ### 1. Record the baseline
 
-Before injection, save the relevant XR and GoBMP state:
+Before injection, verify and record the relevant baseline in `manifest.txt`:
 
-- BGP neighbor state and negotiated AFI/SAFI.
-- RR1 BMP server state and the Route Mirroring configuration for the peer.
-- Whether the intended NLRI already exists in the BGP-LS table.
-- GoBMP log and JSONL output baseline.
-- UTC timestamp.
+- BGP neighbor is Established and BGP-LS AFI/SAFI is negotiated.
+- RR1 BMP connection is Established and Route Mirroring is enabled for the
+  monitored peer and direction.
+- The intended NLRI is absent from the BGP-LS table, or is withdrawn before
+  the test.
+- GoBMP is running and its output/log capture is ready.
+- Workstation and server UTC clock samples.
 
-Record a UTC timestamp before injection in the manifest. The GoBMP log
-capture uses `--tail=0 --follow`, so it does not need this variable in its
-terminal session. Use the route's timestamp, peer, and NLRI when filtering the
-copied JSONL file locally.
+Do not create a separate `xr-before.txt`. Save the XR route detail and
+post-injection state together in `xr-after.txt` after the route is advertised.
+
+Record the workstation and test server clocks in UTC before injection.
+UTC removes time-zone formatting differences; the paired samples expose any
+clock offset between the machines. The GoBMP log capture uses
+`--tail=0 --follow`, so it does not need a timestamp variable in its terminal
+session. Use the route's timestamp, peer, and NLRI when filtering the copied
+JSONL file locally.
 
 ```sh
-START_UTC=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-printf 'start_utc=%s\n' "$START_UTC" \
+printf 'workstation_start_utc=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+  >> "$RUN_DIR/manifest.txt"
+printf 'server_start_utc=%s\n' \
+  "$(ssh "$LAB_HOST" "date -u '+%Y-%m-%dT%H:%M:%SZ'")" \
   >> "$RUN_DIR/manifest.txt"
 ```
 
-Use the XR release's supported commands. Typical useful views include BGP
-neighbor detail, `show bgp bmp server 1 detail`, and a BGP-LS table query for
-the exact NLRI. Save the full output rather than only a screenshot or a
-paraphrase.
+Use the XR release's supported commands for the baseline checks. Typical
+views include BGP neighbor detail, `show bgp bmp server 1 detail`, and a BGP-LS
+table query for the exact NLRI. Record the baseline results in `manifest.txt`.
 
 If the same NLRI already exists, withdraw it and verify its removal before the
 test, or use a fixture whose NLRI is unique to this run. Do not clear a shared
@@ -389,8 +401,17 @@ fails. Record the `curl` command in `manifest.txt`. An accepted/queued response
 is only the first checkpoint; continue with the RR and GoBMP checks.
 
 After the route appears or the test times out, copy GoBMP's JSONL output from
-the server. The pre-decode hex logs were collected in the previous step. No
-line count or local server-side editing is needed:
+the server. Record both end clocks, then copy the output. The pre-decode hex
+logs were collected in the previous step. No line count or local server-side
+editing is needed:
+
+```sh
+printf 'workstation_end_utc=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+  >> "$RUN_DIR/manifest.txt"
+printf 'server_end_utc=%s\n' \
+  "$(ssh "$LAB_HOST" "date -u '+%Y-%m-%dT%H:%M:%SZ'")" \
+  >> "$RUN_DIR/manifest.txt"
+```
 
 ```sh
 scp "$LAB_HOST:$LAB_DIR/testbeds/bgp_ls/output/gobmp.jsonl" \
@@ -404,14 +425,39 @@ file.
 
 ### 4. Verify reception by XR
 
-After the injection, save XR output on the workstation showing:
+After the injection, save the following complete command outputs from RR1 to
+`xr-after.txt`, in this order. Include each command line and the exact route
+key/peer address used. Do not replace command output with a summary or
+screenshot.
 
-- The peer remains Established and BGP-LS remains negotiated.
-- The exact NLRI is present in the expected BGP-LS table and has the expected
-  protocol, instance ID, descriptors, and route type.
-- The received path attributes that XR displays, including values under test.
-- No malformed UPDATE notification or session reset occurred.
-- BMP Route Mirroring remains active for the relevant peer.
+1. `show clock` — XR timestamp for correlation with workstation/server UTC in
+   `manifest.txt`.
+2. `show bgp link-state link-state <exact-advertised-NLRI> detail` — received
+   route, NLRI descriptors, path source, next hop, displayed attributes, and
+   route version. Capture this even if the route is absent.
+3. `show bgp neighbor <bgpinjector-peer-address>` — injector peer state and
+   negotiated capabilities/address families, including whether BGP-LS
+   remains negotiated.
+4. `show bgp sessions` — overall session state, to expose any session changes
+   during the run.
+5. `show bgp bmp server 1 detail` — BMP connection state, update mode, peer
+   counters, message totals, drops, and pending messages. Keep the full output
+   even if counters for BGP-LS do not increment.
+6. If the route is absent, the BGP session changed state, or XR reports an
+   update error, include the relevant BGP log lines covering the injection
+   interval (especially neighbor state changes and malformed UPDATE reports).
+
+If `show bgp neighbor <peer>` or `show bgp sessions` is not accepted by the
+installed XR release, record the command and error, then use the release's
+equivalent neighbor/session view. Do not include a full running configuration
+dump routinely. If Route Mirroring configuration is missing or unclear, append
+only the relevant BMP and BGP neighbor/group configuration as diagnostic
+context.
+
+This snapshot establishes whether the route reached XR, how XR displays its
+attributes, whether the injector session remained healthy, and whether the BMP
+connection stayed active. It does not by itself prove GoBMP received the BMP
+message; use the GoBMP raw log and decoded JSON evidence for that.
 
 If the route is absent, stop the decoder investigation here. First establish
 whether the BGP UPDATE reached XR and whether XR rejected, treated-as-withdraw,
@@ -452,6 +498,12 @@ and decoded records, but do not treat a missing route after a reported loss as
 a decoder defect until the test is repeated without that condition.
 
 ### 6. Compare expected values with wire and decoded output
+
+After reviewing the fixture, embedded UPDATE, GoBMP record, and XR route
+output, save the review findings in `expected-vs-observed.md`. This file is the
+written result of the analysis, not an empty template. Include confirmed
+matches, each discrepancy with its wire evidence, unresolved fields, fixture
+validity caveats, and any missing evidence.
 
 Create a field table in `expected-vs-observed.md`:
 
@@ -559,8 +611,8 @@ GoBMP decodes `<field/TLV>` as `<observed>`; expected `<expected>`.
 
 - [ ] One fixture was injected per isolated run.
 - [ ] Fixture, request response, and fixture hash are saved.
-- [ ] BGP and BMP session state was recorded before and after.
-- [ ] XR received-route output was saved.
+- [ ] Baseline BGP/BMP readiness and NLRI absence were recorded before injection.
+- [ ] XR received-route detail and post-injection session state were saved in `xr-after.txt`.
 - [ ] GoBMP pre-decode hex logs contain the common header, per-peer header,
   and Route Monitor or Route Mirror body for the route under test.
 - [ ] The embedded BGP UPDATE and relevant TLV bytes were identified.
@@ -592,3 +644,362 @@ triage. It should group findings by root cause, check for existing issues, and
 create separate issues only for independently actionable, confirmed GoBMP
 defects. This keeps the test output reproducible and the resulting work
 parallelizable without turning one run into a speculative issue dump.
+
+
+## Quick run checklist
+
+1. Source the run context and select the fixture:
+
+   ```sh
+   RUN_CONTEXT_DIR="/absolute/path/to/run.env"
+   source "$RUN_CONTEXT_DIR/bgp-ls-run.env"
+   FIXTURE_PATH="$FIXTURE_DIR/$FIXTURE_NAME"
+   RUN_DIR="$RESULTS_DIR/$RUN_LABEL"
+   ```
+
+2. Create the evidence directory and record the fixture:
+
+   ```sh
+   mkdir -p "$RUN_DIR"
+   touch "$RUN_DIR/xr-after.txt"
+   cp "$FIXTURE_PATH" "$RUN_DIR/fixture.json"
+   shasum -a 256 "$RUN_DIR/fixture.json" > "$RUN_DIR/fixture.sha256"
+   printf 'fixture_name=%s\nfixture_path=%s\n' "$FIXTURE_NAME" "$FIXTURE_PATH" > "$RUN_DIR/manifest.txt"
+   printf 'workstation_repo_commit=%s\n' "$(git -C "$REPO_DIR" rev-parse HEAD)" >> "$RUN_DIR/manifest.txt"
+   printf 'server_repo_commit=%s\n' "$(ssh "$LAB_HOST" "git -C '$LAB_DIR' rev-parse HEAD")" >> "$RUN_DIR/manifest.txt"
+   printf 'workstation_start_utc=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$RUN_DIR/manifest.txt"
+   printf 'server_start_utc=%s\n' "$(ssh "$LAB_HOST" "date -u '+%Y-%m-%dT%H:%M:%SZ'")" >> "$RUN_DIR/manifest.txt"
+   ```
+
+3. Record baseline service state and start the minimal lab:
+
+   ```sh
+   ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml ps" > "$RUN_DIR/compose-ps-before.txt" 2>&1
+   ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml up -d gobmp bgpinjector" > "$RUN_DIR/compose-up.txt" 2>&1
+   ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml ps" > "$RUN_DIR/compose-ps-after.txt" 2>&1
+   ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml images" > "$RUN_DIR/compose-images-after.txt" 2>&1
+   ```
+
+4. Verify the baseline BGP/BMP session, Route Mirroring configuration, and NLRI absence; record the checks in `manifest.txt`.
+
+5. Open the API tunnel in a separate terminal:
+
+   ```sh
+   ssh -N -L 18080:127.0.0.1:18080 "$LAB_HOST"
+   ```
+
+6. Follow GoBMP logs in a separate terminal:
+
+   ```sh
+   ssh "$LAB_HOST" "cd '$LAB_DIR' && docker compose -f testbeds/bgp_ls/docker-compose.yml logs --no-color --follow --tail=0 gobmp" > "$RUN_DIR/gobmp.log" 2>&1
+   ```
+
+7. Inject one fixture:
+
+   ```sh
+   curl --fail-with-body -sS -D "$RUN_DIR/http-headers.txt" -X POST http://127.0.0.1:18080/v1/routes -H 'content-type: application/json' --data-binary @"$RUN_DIR/fixture.json" -o "$RUN_DIR/http-response.txt"
+   ```
+
+8. Capture the XR state in `xr-after.txt`:
+
+   ```text
+   show clock
+   show bgp link-state link-state neighbors <bgpinjector-peer-address> received routes
+   show bgp link-state link-state <exact-advertised-NLRI> detail
+   show bgp sessions
+   show bgp neighbor <bgpinjector-peer-address>
+   show bgp bmp server 1 detail
+   ```
+
+   If the route is missing, the BGP session changed state, or XR reports an
+   update error, also capture relevant BGP log lines covering the injection
+   interval. Avoid `show logging last 20` for every successful run; it can add
+   unrelated noise.
+
+9. Stop GoBMP log following and copy its JSONL output:
+
+   ```sh
+   printf 'workstation_end_utc=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$RUN_DIR/manifest.txt"
+   printf 'server_end_utc=%s\n' "$(ssh "$LAB_HOST" "date -u '+%Y-%m-%dT%H:%M:%SZ'")" >> "$RUN_DIR/manifest.txt"
+   scp "$LAB_HOST:$LAB_DIR/testbeds/bgp_ls/output/gobmp.jsonl" "$RUN_DIR/gobmp-all.jsonl"
+   ```
+
+10. Save the field-by-field review of the fixture, embedded BGP UPDATE TLVs, XR route detail, and GoBMP record in `expected-vs-observed.md`.
+
+11. Sanitize the run directory before sharing it.
+
+### Example: `xr-after.txt`
+
+The following is a sample capture. The received-routes listing includes three
+routes; the OSPFv3 Node entry in the middle is the route selected by this
+fixture. The outputs are shown in timestamp order. This captured route query
+omits `detail`; use the full detail query specified above for new runs.
+
+```text
+RP/0/RP0/CPU0:RR1#sh clock
+Tue Nov 10 00:11:19.043 UTC
+00:11:19.141 UTC Tue Nov 10 2026
+
+RP/0/RP0/CPU0:RR1#sh bgp link-state link-state neighbors fd00:100::2  received routes
+Tue Nov 10 00:12:37.077 UTC
+BGP router identifier 10.0.0.6, local AS number 65000
+BGP generic scan interval 60 secs
+Non-stop routing is enabled
+BGP table state: Active
+Table ID: 0x0   RD version: 6
+BGP main routing table version 6
+BGP NSR Initial initsync version 1 (Reached)
+BGP NSR/ISSU Sync-Group versions 0/0
+BGP scan interval 60 secs
+
+Status codes: s suppressed, d damped, h history, * valid, > best
+              i - internal, r RIB-failure, S stale, N Nexthop-discard
+Origin codes: i - IGP, e - EGP, ? - incomplete
+Prefix codes: E link, V node, T IP reachable route, S SRv6 SID, SP SRTE Policy, u/U unknown
+              I Identifier, N local node, R remote node, L link, P prefix, S SID, C candidate path
+              L1/L2 ISIS level-1/level-2, O OSPF, O3 OSPFv3, D direct, ST static/peer-node, SR Segment Routing
+              a area-ID, l link-ID, t topology-ID, s ISO-ID,
+              c confed-ID/ASN, b bgp-identifier, r router-ID, te te-router-ID, sd SID
+              i if-address, n nbr-address, o OSPF Route-type, p IP-prefix
+              d designated router address, po protocol-origin, f flag
+              e endpoint-ip, cl color, as originator-asn oa originator-address
+              di discriminator, q bgp-router-ID
+  Network            Next Hop            Metric LocPrf Weight Path
+*>i[V][L2][I0x0][N[c65000][s0000.0000.0101.00]]/264
+                      fd00:100::2                   100      0 i
+*>i[V][O3][I0x1][N[c65000][a0.0.0.0][r10.0.0.11]]/312
+                      fd00:100::2                   100      0 i
+*>i[E][L2][I0x7][N[c65000][s0000.0000.0001.00]][R[c65000][s0000.0000.0002.00]][L[i192.0.2.1][n192.0.2.2][i2001:db8:12::1][n2001:db8:12::2][t0x0007]]/936
+                      fd00:100::2                   100      0 i
+
+Processed 3 prefixes, 3 paths
+
+RP/0/RP0/CPU0:RR1#sh bgp link-state link-state [V][O3][I0x1][N[c65000][a0.0.0.0][r10.0.0.11]]/312
+Tue Nov 10 00:14:41.842 UTC
+BGP routing table entry for [V][O3][I0x1][N[c65000][a0.0.0.0][r10.0.0.11]]/312
+Versions:
+  Process           bRIB/RIB   SendTblVer
+  Speaker                  6            6
+Last Modified: Nov 10 00:08:09.662 for 00:06:32
+Paths: (1 available, best #1)
+  Not advertised to any peer
+  Path #1: Received by speaker 0
+  Not advertised to any peer
+  Local, (received & used)
+    fd00:100::2 from fd00:100::2 (10.0.0.99)
+      Origin IGP, localpref 100, valid, internal, best, group-best
+      Received Path ID 0, Local Path ID 1, version 6
+      Link-state: Unknown Attr: type 1032 length 4 value 04080004000007d1, Node flag bits: 1c[A], Node-name: gobmp-ospfv3-node.example.net
+                  Local TE Router-ID: 10.0.0.11, Local TE Router-ID:
+                  2001:db8:11::1 MSD: Type 1 Value 12, Unknown Attr: type 65001 length 4 value fde90004aabbccdd
+
+RP/0/RP0/CPU0:RR1#show bgp sessions
+Tue Nov 10 00:15:36.230 UTC
+
+Neighbor        VRF                   Spk    AS   InQ  OutQ  NBRState     NSRState
+fd00:100::2     default                 0 65000     0     0  Established  None
+
+RP/0/RP0/CPU0:RR1#show bgp neighbors fd00:100::2
+Tue Nov 10 00:17:23.585 UTC
+
+BGP neighbor is fd00:100::2
+Remote AS 65000, local AS 65000, internal link
+Remote router ID 10.0.0.99
+  BGP state = Established, up for 11:45:53
+  Previous State: Idle
+  Last Received Message: KeepAlive
+  NSR State: None
+  Last read 00:00:03, Last read before reset 11:46:04
+  Hold time is 30, keepalive interval is 10 seconds
+  Configured hold time: 180, keepalive: 60, min acceptable hold time: 3
+  Last write 00:00:05, attempted 19, written 19
+  Second last write 00:00:15, attempted 19, written 19
+  Last write before reset 11:45:58, attempted 19, written 19
+  Second last write before reset 11:46:08, attempted 19, written 19
+  Last write pulse rcvd  Nov 10 00:17:20.039 last full not set pulse count 11104
+  Last write pulse rcvd before reset 11:45:58
+  Last insert into reset queue: Nov  9 12:31:25.810, removed at Nov  9 12:31:25.810
+  Socket not armed for io, armed for read, armed for write
+  Last write thread event before reset 11:45:58, second last 11:45:58
+  Last KA expiry before reset 11:45:58, second last 11:46:08
+  Last KA error before reset 00:00:00, KA not sent 00:00:00
+  Last KA start before reset 11:45:58, second last 11:46:08
+  Precedence: internet
+  Non-stop routing is enabled
+  BGP Monitoring(BMP) activated for servers:
+      1
+  Multi-protocol capability received
+  Neighbor capabilities:
+    Route refresh: advertised (old + new) and received (new)
+    4-byte AS: advertised and received
+    Address family IPv4 Unicast: advertised and received
+    Address family IPv6 Unicast: advertised and received
+    Address family Link-state Link-state: advertised and received
+  Received 5557 messages, 0 notifications, 0 in queue
+  Sent 5556 messages, 0 notifications, 0 in queue
+  Minimum time between advertisement runs is 0 secs
+  Inbound message logging enabled, 4 messages buffered
+  Outbound message logging enabled, 4 messages buffered
+  Fast fallover is not enabled
+    Neighbor is directly connected
+    Neighbor fast-fallover is not configured
+
+For Address Family: IPv4 Unicast
+  BGP neighbor version 9
+  BGP neighbor quick-withdraw version 9
+  Update group: 0.2 Filter-group: 0.1  No Refresh request being processed
+  Inbound soft reconfiguration allowed (override route-refresh)
+  AF-dependent capabilities:
+    Extended Nexthop Encoding: advertised
+  Route refresh request: received 0, sent 0
+  0 accepted prefixes, 0 are bestpaths
+  Exact no. of prefixes denied: 0
+  Cumulative no. of prefixes denied: 0
+  Number of routes received before ingress policy run: 0
+  Accepted prefixes unmodified: 0
+  Accepted prefixes (modified and unmodified): 0
+  Accepted prefixes (modified and unmodified) high water mark: 0 (not set)
+  Accepted prefixes modified: 0
+  Accepted prefixes modified high water mark: 0 (not set)
+  Denied prefixes: 0
+  Denied prefixes high water mark: 0 (not set)
+  Prefix advertised 0, suppressed 0, withdrawn 0
+  AIGP is enabled
+  An EoR was received during read-only mode
+  Last ack version 9, Last synced ack version 0
+  Outstanding version objects: current 0, max 0, refresh 0
+  Additional-paths operation: None
+  Send Multicast Attributes
+  Advertise routes with local-label via Unicast SAFI
+  Slow Peer State: Detection-only
+    Detected state: FALSE, Detection threshold: 300
+    Detection Count: 0, Recovery Count: 0
+    Active OOR Timers:
+      Last nbr refresh timer started: ---
+      Last nbr refresh timer stopped: ---
+
+For Address Family: IPv6 Unicast
+  BGP neighbor version 9
+  BGP neighbor quick-withdraw version 9
+  Update group: 0.2 Filter-group: 0.1  No Refresh request being processed
+  Inbound soft reconfiguration allowed (override route-refresh)
+  Route refresh request: received 0, sent 0
+  0 accepted prefixes, 0 are bestpaths
+  Exact no. of prefixes denied: 0
+  Cumulative no. of prefixes denied: 0
+  Number of routes received before ingress policy run: 0
+  Accepted prefixes unmodified: 0
+  Accepted prefixes (modified and unmodified): 0
+  Accepted prefixes (modified and unmodified) high water mark: 0 (not set)
+  Accepted prefixes modified: 0
+  Accepted prefixes modified high water mark: 0 (not set)
+  Denied prefixes: 0
+  Denied prefixes high water mark: 0 (not set)
+  Prefix advertised 4, suppressed 0, withdrawn 0
+  AIGP is enabled
+  An EoR was received during read-only mode
+  Last ack version 9, Last synced ack version 0
+  Outstanding version objects: current 0, max 1, refresh 0
+  Additional-paths operation: None
+  Send Multicast Attributes
+  Advertise routes with local-label via Unicast SAFI
+  Slow Peer State: Detection-only
+    Detected state: FALSE, Detection threshold: 300
+    Detection Count: 0, Recovery Count: 0
+    Active OOR Timers:
+      Last nbr refresh timer started: ---
+      Last nbr refresh timer stopped: ---
+
+For Address Family: Link-state Link-state
+  BGP neighbor version 6
+  BGP neighbor quick-withdraw version 6
+  Update group: 0.3 Filter-group: 0.2  No Refresh request being processed
+  Inbound soft reconfiguration allowed (override route-refresh)
+  Route refresh request: received 0, sent 0
+  3 accepted prefixes, 3 are bestpaths
+  Exact no. of prefixes denied: 0
+  Cumulative no. of prefixes denied: 0
+  Number of routes received before ingress policy run: 4
+  Accepted prefixes unmodified: 3
+  Accepted prefixes (modified and unmodified): 3
+  Accepted prefixes (modified and unmodified) high water mark: 3 (Nov 10 00:08:09.697)
+  Accepted prefixes modified: 0
+  Accepted prefixes modified high water mark: 0 (not set)
+  Denied prefixes: 0
+  Denied prefixes high water mark: 0 (not set)
+  Prefix advertised 0, suppressed 0, withdrawn 0
+  AIGP is enabled
+  An EoR was received during read-only mode
+  Last ack version 6, Last synced ack version 0
+  Outstanding version objects: current 0, max 0, refresh 0
+  Additional-paths operation: None
+  Send Multicast Attributes
+  Slow Peer State: Detection-only
+    Detected state: FALSE, Detection threshold: 300
+    Detection Count: 0, Recovery Count: 0
+    Active OOR Timers:
+      Last nbr refresh timer started: ---
+      Last nbr refresh timer stopped: ---
+
+  Connections established 3; dropped 2
+  Local host: fd00:100::1, Local port: 179, IF Handle: 0x00000020
+  Foreign host: fd00:100::2, Foreign port: 36491
+  Last reset 11:45:58, due to Peer closing down the session
+  Peer reset reason: Remote closed the session
+
+RP/0/RP0/CPU0:RR1#show bgp bmp server 1 detail
+Tue Nov 10 00:20:18.435 UTC
+BMP server 1
+Host 192.168.100.10 Port 5000
+Connected for 15:26:16
+Last Connect : Nov  9 08:54:02.157
+Last Disconnect event received : 00:00:00
+Flap count : 1
+Precedence:  internet
+BGP neighbors: 1
+VRF: - (0x60000000)
+Update Source: 192.168.100.1 (Gi0/0/0/1)
+Update Source Vrf ID: 0x60000000
+Update Mode                       : Rmir-In-Pre-Policy
+Flapping Delay                    : 300 secs
+Initial Delay                     : 5 secs
+Initial Refresh Delay             : 1 secs
+Initial Refresh Spread            : 1 secs
+Stats Reporting Period            : 0 secs
+Queue write pulse sent            : Nov  9 09:24:28.972, Nov 10 00:08:09.697 (all)
+Queue write pulse received        : Nov 10 00:08:09.697
+
+TCP:
+  Last message sent: Nov 10 00:08:09.697, Status: No Pending Data
+  Last write pulse received: Nov 10 00:08:09.703, Waiting: FALSE
+
+Message Stats:
+Total msgs dropped   : 0
+Total msgs pending   : 0, Max: 2 at Nov  9 09:24:28.972
+Total messages sent  : 19
+Total bytes sent     : 4107, Time spent: 0.006 secs
+  INITIATION         : 1
+  TERMINATION        : 0
+  STATS-REPORT       : 0
+  PER-PEER messages  : 18
+
+  PEER UP messages   : 3
+  PEER DOWN messages : 2
+  ROUTE-MIR messages : 13
+  Last RMirr EnQ    : Nov 10 00:08:09.697
+  ROUTE-MON messages : 0
+
+Neighbor fd00:100::2 (vrf default)
+Last BMP Activate : Nov  9 08:53:46.239
+First Peer Up EnQ : Nov  9 08:54:04.477
+Last Peer Up EnQ  : Nov  9 12:31:30.037
+Last RMirr EnQ    : Nov 10 00:08:09.697
+  Messages pending : 0
+  Messages dropped : 0
+  Messages sent    : 18
+    PEER-UP        : 3
+    PEER-DOWN      : 2
+
+    Rmir-In-Pre-Policy:
+    ROUTE-MIRR     : 13
+```

@@ -1,6 +1,6 @@
 services:
   gobmp:
-    image: docker.io/sbezverk/gobmp:mup_test
+    image: ghcr.io/sbezverk/gobmp:latest
     command:
       - "--source-port=5000"
       - "--dump=file"
@@ -17,7 +17,7 @@ services:
   gobgp:
     # v4.8.0 is the current multi-platform GoBGP image release. Override
     # GOBGP_IMAGE when testing another release or a locally built image.
-    image: ${GOBGP_IMAGE:-docker.io/jauderho/gobgp:v4.8.0}
+    image: ${GOBGP_IMAGE:-ghcr.io/jauderho/gobgp:v4.8.0}
     command: ["/usr/local/bin/gobgpd", "-f", "/config/gobgp.toml"]
     depends_on:
       - gobmp
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   bgpinjector:
-    image: docker.io/sbezverk/bgpinjector:mup_test
+    image: ghcr.io/sbezverk/bgpinjector:latest
     command:
       - "-api-address=0.0.0.0:8080"
       - "-speaker-address=172.30.0.2:179"

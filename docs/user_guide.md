@@ -134,11 +134,11 @@ Go flags accept either one or two leading hyphens.
 
 ## 4. Running as a Docker container
 
-Replace `<tag>` with the image tag supplied for your test. The repository's
-default image name is `docker.io/sbezverk/bgpinjector`.
+The current image is published with the `latest` tag at
+`ghcr.io/sbezverk/bgpinjector`.
 
 ```bash
-docker pull docker.io/sbezverk/bgpinjector:<tag>
+docker pull ghcr.io/sbezverk/bgpinjector:latest
 ```
 
 If an image archive was supplied instead of a registry tag:
@@ -158,7 +158,7 @@ docker run -d \
   --name bgpinjector \
   --restart unless-stopped \
   --network host \
-  docker.io/sbezverk/bgpinjector:<tag> \
+  ghcr.io/sbezverk/bgpinjector:latest \
   --speaker-address=192.0.2.1:179 \
   --local-address=25.25.25.5 \
   --local-as=65137 \
@@ -182,7 +182,7 @@ docker run -d \
   --name bgpinjector \
   --restart unless-stopped \
   -p 127.0.0.1:8080:8080 \
-  docker.io/sbezverk/bgpinjector:<tag> \
+  ghcr.io/sbezverk/bgpinjector:latest \
   --speaker-address=192.0.2.1:179 \
   --local-address=192.0.2.2 \
   --local-as=65137 \
