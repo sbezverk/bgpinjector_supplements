@@ -1,3 +1,4 @@
 # Ignore run environment files
-run.env/*
-results/*
+**/run.env/**
+**/results/**
+**/output/**
